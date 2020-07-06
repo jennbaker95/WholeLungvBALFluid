@@ -30,13 +30,13 @@ Baker et al. 2020. Application of a novel analytic approach to discriminate sign
  
 #### Description of Files included in Repository
 
-Rmarkdown with code 
-taxonomy file
-shared file 
-quantification data 
-read count data
+- Rmarkdown with code 
+- taxonomy file
+- shared file 
+- quantification data 
+- read count data
 
 
 #### External Links: 
-Link to publication: 
-Link to SRA submission: 
+- Link to publication: 
+- Link to SRA submission: 
