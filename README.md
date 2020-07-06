@@ -4,7 +4,8 @@ The purpose of this repository is to provide public access to the R code and dat
 
 Baker et al. 2020. Application of a novel analytic approach to discriminate signal and noise in low-biomass microbiome studies: Whole lung tissue is the preferred sampling method for amplicon-based characterization of murine lung microbiota (in preparation). 
 
-##### Outline of Analytical Approach for Low-Biomass Specimens
+
+#### Outline of Analytical Approach for Low-Biomass Specimens
 
 1) Specimen collection and processing 
   - Goal: Selection of appropriate numbers and types of negative and positive controls - sample all potential source communities
@@ -27,3 +28,15 @@ Baker et al. 2020. Application of a novel analytic approach to discriminate sign
   - Method: Principal component analysis and ranked relative abundance of bacterial taxa
   
  
+#### Description of Files included in Repository
+
+Rmarkdown with code 
+taxonomy file
+shared file 
+quantification data 
+read count data
+
+
+#### External Links: 
+Link to publication: 
+Link to SRA submission: 
