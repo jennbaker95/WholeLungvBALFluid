@@ -2,15 +2,15 @@
 title: "Whole Lung Tissue vs. BAL Fluid 16S Sequencing Analysis"
 author: "Jenn Baker"
 date: "June 24, 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
-
-This report was built with R version `r getRversion()`. 
 
 ```{r rmd_setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE, # whether code should be displayed in document
                       cache = TRUE, # whether to cache results of code chunks for future knits
-                      fig.align = 'center', # alignment options: 'left', 'right', 'center', 'default'
+                      fig.align = 'left', # alignment options: 'left', 'right', 'center', 'default'
                       error = TRUE, # display error messages in document (TRUE) or stop render on error (FALSE)
                       warning = FALSE,
                       message=FALSE, 
@@ -41,6 +41,15 @@ library(vegan)          # decostand(), metaMDS(), scores(), rda(), ordispider(),
 #devtools::install_github("https://github.com/cb-42/cbmbtools")
 library(cbmbtools)
 
+#V. Rmarkdown formatting
+library(pander)
+library(tadaatoolbox)
+
+```
+
+### This report was created with: 
+```{r session info} 
+pander(sessionInfo()) 
 ```
 
 ```{r custom functions}
@@ -74,9 +83,9 @@ ddpcr <- mutate(ddpcr, Sample_Type = factor(case_when(
 
 ```
 
-```{r plot 16S ddPCR quantification data}
-
-#data prep for pretty version
+# 16S rRNA gene amplicon quantification 
+```{r plot 16S ddPCR quantification data, fig.height=5, fig.width=8}
+#data prep
 ddpcr <- ddpcr %>% group_by(Sample_Type)
 
 ddpcr.summary <- summarize(ddpcr, 
@@ -103,20 +112,19 @@ xlab("\nSample Type")
 
 ```
 
-```{r hypothesis testing for 16S ddPCR quantification}
+## Hypothesis testing - 16S rRNA gene amplicon quantification
+```{r hypothesis testing for 16S ddPCR quantification , echo = TRUE, results = 'hide'}
 #overall difference between groups - kruskal wallis test for multiple group comparisons 
 kruskal.test(Gene_16S_copies_per_mL ~ Sample_Type, data=ddpcr)
 # Kruskal-Wallis rank sum test
-#
 # data:  Gene_16S_copies_per_mL by Sample_Type
 # Kruskal-Wallis chi-squared = 30.451, df = 6, p-value = 3.227e-05
 
 #pairwise difference between groups - Wilcoxon rank sum test, adjusted for multiple comparisons
 pairwise.wilcox.test(ddpcr$Gene_16S_copies_per_mL, ddpcr$Sample_Type, p.adjust.method = "BH")
 # Pairwise comparisons using Wilcoxon rank sum test 
-# 
 # data:  ddpcr$Gene_16S_copies_per_mL and ddpcr$Sample_Type 
-# 
+
 #               NTC     Iso_Ctrl PBS     Syringe_Rinse Homog_Ctrl BAL    
 # Iso_Ctrl      0.64000 -        -       -             -          -      
 # PBS           0.58947 0.40000  -       -             -          -      
@@ -124,7 +132,6 @@ pairwise.wilcox.test(ddpcr$Gene_16S_copies_per_mL, ddpcr$Sample_Type, p.adjust.m
 # Homog_Ctrl    0.58947 0.16667  0.42353 0.40000       -          -      
 # BAL           0.22238 0.00734  0.31818 0.27082       0.90909    -      
 # Lung          0.00734 0.00170  0.06731 0.00734       0.06731    0.00012
-# 
 # P value adjustment method: BH 
 
 ```
@@ -136,11 +143,9 @@ miseq_reads <- read.csv("WholeLung_v_BALF_MiSeq_Reads_Final.csv", header = TRUE,
 ```
 
 ```{r load & prep 16S sequencing data, message = FALSE, include = FALSE}
-# For ease of use, place the processed 16S data files into the same directory as your current RStudio project
-
 
 # Basic processing with selection of OTUs > 0.1 % of the population in each bacterial community
-# I. Read in opti_mcc.shared
+# Read in opti_mcc.shared
 otu_good <- load_shared("WholeLung_v_BALF.shared")
 
 # Trim _S from end of rownames(otu_good), inspect data, and convert to dataframe
@@ -154,9 +159,7 @@ otu_good_taxonomy <- load_tax("WholeLung_v_BALF.cons.taxonomy", otu_good = otu_g
 dim(otu_good_taxonomy)
 #[1] 773   7
 
-
-# III. Read in untrimmed version of data for use in diversity metrics
-# a. Read in untrimmed version of opti_mcc.shared
+#untrimmed dataset for diversity metrics 
 otu_raw <- read.table("WholeLung_v_BALF.shared", row.names = 2, header = T, stringsAsFactors = T)
 otu_trim <- otu_raw[, -c(1:2)] # remove unnecessary columns 
 otu_untrimmed <- as.matrix(otu_trim) # convert to matrix 
@@ -165,10 +168,43 @@ otu_untrimmed <- as.data.frame(otu_untrimmed) # convert to dataframe
 dim(otu_untrimmed) # inspect data 
 #[1]  120 3391
 
-# b. Read in cons.taxonomy table for use with the untrimmed version of sequencing data & inspect data 
+# Read in cons.taxonomy table for use with the untrimmed version of sequencing data & inspect data 
 otu_untrimmed_taxonomy <- load_tax("WholeLung_v_BALF.cons.taxonomy", otu_good = otu_untrimmed)
 dim(otu_untrimmed_taxonomy) 
 #[1]  3391    7
+
+###optional datasets for exploratory analysis 
+#uncomment and run indicated lines below to see rest of results at each step of quality thresholding
+
+# untrimmed dataset (full dataset post-mothur, no OTUs or samples were omitted) 
+#this code is used in main analysis for diversity metrics and is replicated above 
+#uncomment and run this chunk of code to see results for untrimmed dataset
+#will also need to comment out the quality check chunk of code following analysis of MiSeq reads
+# otu_raw <- read.table("WholeLung_v_BALF.shared", row.names = 2, header = T, stringsAsFactors = T)
+# otu_trim <- otu_raw[, -c(1:2)] # remove unnecessary columns
+# otu_untrimmed <- as.matrix(otu_trim) # convert to matrix
+# rownames(otu_untrimmed) <- str_remove(rownames(otu_untrimmed), "_S\\d+_L001_R1_001") %>% str_remove("_S\\d+_L001_R1") # clean up sample names
+# otu_untrimmed <- as.data.frame(otu_untrimmed) # convert to dataframe
+# dim(otu_untrimmed) # inspect data #[1]  120 3391
+# otu_good <- otu_untrimmed
+# otu_untrimmed_taxonomy <- load_tax("WholeLung_v_BALF.cons.taxonomy", otu_good = otu_untrimmed)
+# dim(otu_untrimmed_taxonomy)
+# otu_good_taxonomy <- otu_untrimmed_taxonomy
+#[1]  3391    7
+
+
+# trimmed dataset (dataset post-mothur that has been trimmed to omit OTUs < 0.1% of the sample population)
+#uncomment and run this chunk of code to see results for trimmed dataset
+#will also need to comment out the quality check chunk of code following analysis of MiSeq reads
+otu_good <- load_shared("WholeLung_v_BALF.shared")
+rownames(otu_good) <- str_remove(rownames(otu_good), "_S\\d+_L001_R1_001") %>% str_remove("_S\\d+_L001_R1")
+dim(otu_good) #[1] 120 773
+otu_good <- as.data.frame(otu_good)
+
+
+
+# quality-checked dataset (dataset post-mothur, OTUs >0.1% of each sample population, and filtered out samples < 100 reads)
+# this is the final dataset used in the main analysis - no extra code needed
 
 ```
 
@@ -342,8 +378,8 @@ xlab("\nSample Type")
 ```{r quality checks, include = FALSE}
 
 #QC step - remove samples which have less than 100 reads from dataframes used in main analysis
-otu_df <- dplyr::filter(otu_df, Sample != "WVB_Lung_L3")
-otu_good <- otu_good[rownames(otu_good) != "WVB_Lung_L3",]
+# otu_df <- dplyr::filter(otu_df, Sample != "WVB_Lung_L3")
+# otu_good <- otu_good[rownames(otu_good) != "WVB_Lung_L3",]
 
 ```
 
@@ -1002,7 +1038,7 @@ ggplot(agg_shan_all, aes(x = Sample_Type2, y = Mean_Sh, fill = Sample_Type2)) + 
         axis.text.x = element_text(size = 10),
         axis.title.x = element_text(face = "bold", size = 15), 
         plot.margin=unit(c(0.5,0.5,0.5,1), "cm")) + 
-  scale_y_continuous(limits = c(-0.01,4), breaks = seq(0,4,1), expand = c(0,0)) + 
+  scale_y_continuous(limits = c(-0.01,4.5), breaks = seq(0,4,1), expand = c(0,0)) + 
   labs(y = "Shannon Diversity Index\n", x = "\nSample Type") 
 
 ```
