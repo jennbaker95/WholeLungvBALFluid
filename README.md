@@ -39,6 +39,6 @@ Baker et al. 2020. Application of a novel analytic approach to discriminate sign
 
 #### External Links: 
 - Link to publication: 
-- Link to SRA submission: 
+- Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 
 Packages and dependencies required to run code in the repository can be found in session info in the knitted Rmarkdown pdf and html.
