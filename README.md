@@ -46,12 +46,9 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 - Link to preprint: 
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 - Links to Rmarkdown htmls: 
-
-Trimmed & Quality-Checked Dataset (final version): https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
-
-Untrimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
-
-Trimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
+  Trimmed & Quality-Checked Dataset (final version): https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
+  Untrimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
+  Trimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
     
   
 Packages and dependencies required to run code in the repository can be found in session info in the knitted Rmarkdown pdf and html.
