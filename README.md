@@ -38,7 +38,7 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 - Knitted reports (raw html and pdf) for untrimmed, trimmed, and final datasets for comparison
 - License information
 - Hidden files (.RData and .Rhistory from local sessions)
-- .gitignore file (ignores cache and other hidden files when pushing directory contents to GitHub)
+- gitignore file (ignores cache and other hidden files when pushing directory contents to GitHub)
 - DockerFile (for generating image for reproducibility - currently under construction)
 
 
@@ -46,9 +46,9 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 - Link to preprint: 
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 - Links to Rmarkdown htmls: 
-  Trimmed & Quality-Checked Dataset (final version): https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
-  Untrimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
-  Trimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
+	Trimmed & Quality-Checked Dataset (final version): https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
+	Untrimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
+	Trimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
     
   
 Packages and dependencies required to run code in the repository can be found in session info in the knitted Rmarkdown pdf and html.
