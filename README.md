@@ -2,7 +2,7 @@
 
 The purpose of this repository is to provide public access to the R code and data files used in the following publication: 
 
-Baker et al. 2020. Application of a novel analytic approach to discriminate signal and noise in low-biomass microbiome studies: Whole lung tissue is the preferred sampling method for amplicon-based characterization of murine lung microbiota (in preparation). 
+Baker et al. 2020. Application of an ecology-based analytic approach to discriminate signal and noise in low-biomass microbiome studies: Whole lung tissue is the preferred sampling method for amplicon-based characterization of murine lung microbiota (in preparation). 
 
 
 #### Outline of Analytical Approach for Low-Biomass Specimens
@@ -30,16 +30,25 @@ Baker et al. 2020. Application of a novel analytic approach to discriminate sign
  
 #### Description of Files included in Repository
 
-- Rmarkdown with code 
-- taxonomy file
-- shared file 
-- quantification data 
-- read count data
+- Rmarkdown with code (defaults to final dataset version)
+- Taxonomy file (contains taxonomy assignments for each OTU from mothur)
+- Shared file (contains OTU counts from mothur)
+- 16S rRNA gene ddPCR quantification data 
+- Read count data from MiSeq run
+- Knitted reports (raw html and pdf) for untrimmed, trimmed, and final datasets for comparison
+- License information
+- Hidden files (.RData and .Rhistory from local sessions)
+- .gitignore file (ignores cache and other hidden files when pushing directory contents to GitHub)
+- DockerFile (for generating image for reproducibility - currently under construction)
 
 
 #### External Links: 
-- Link to publication: 
+- Link to preprint: 
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
-- Link to Rmarkdown html: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code.html
-
+- Links to Rmarkdown htmls:
+    Trimmed & Quality-Checked Dataset (final version): https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
+    Untrimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
+    Trimmed dataset: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
+    
+  
 Packages and dependencies required to run code in the repository can be found in session info in the knitted Rmarkdown pdf and html.
