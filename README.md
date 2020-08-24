@@ -47,14 +47,14 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 - Links to Rmarkdown htmls:
   - Trimmed & Quality-Checked Dataset (final version): 
-    -Development Link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
-    -Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cd54d5ec864ea7a90e905a3c2fae51de67d8f406/WholeLung_v_BALF_Code_trimmedQCfinal.html
+    - Development Link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmedQCfinal.html
+    - Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cd54d5ec864ea7a90e905a3c2fae51de67d8f406/WholeLung_v_BALF_Code_trimmedQCfinal.html
   - Untrimmed dataset: 
-    -Development link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
-    -Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cee2674080f51aedb26c9dfe4a8cde38737e052e/WholeLung_v_BALF_Code_untrimmed.html
+    - Development link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_untrimmed.html
+    - Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cee2674080f51aedb26c9dfe4a8cde38737e052e/WholeLung_v_BALF_Code_untrimmed.html
   - Trimmed dataset: 
-    -Development Link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
-    -Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cee2674080f51aedb26c9dfe4a8cde38737e052e/WholeLung_v_BALF_Code_trimmed.html
+    - Development Link: https://raw.githack.com/jennbaker95/WholeLungvBALFluid/dev/WholeLung_v_BALF_Code_trimmed.html
+    - Permanent Link: https://rawcdn.githack.com/jennbaker95/WholeLungvBALFluid/cee2674080f51aedb26c9dfe4a8cde38737e052e/WholeLung_v_BALF_Code_trimmed.html
     
   
 Packages and dependencies required to run code in the repository can be found in session info in the knitted Rmarkdown pdf and html.
