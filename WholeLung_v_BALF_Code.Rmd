@@ -1,16 +1,16 @@
 ---
-title: "Whole Lung Tissue vs. BAL Fluid 16S Sequencing Analysis"
+title: "Whole Lung Tissue vs. BAL Fluid 16S Sequencing Analysis (Trimmed/QC'd Final Dataset)"
 author: "Jennifer M. Baker"
 date: "August 18, 2020 (updated)"
 output:
-  html_document:
-    code_folding: hide
   pdf_document: 
     latex_engine: xelatex
+  html_document:
+    code_folding: "show"
 ---
 
 ```{r rmd_setup, include = FALSE}
-knitr::opts_chunk$set(echo = FALSE, # whether code should be displayed in document
+knitr::opts_chunk$set(echo = FALSE, # whether code should be displayed in document - TRUE for code folding on html
                       cache = TRUE, # whether to cache results of code chunks for future knits
                       fig.align = 'left', # alignment options: 'left', 'right', 'center', 'default'
                       error = TRUE, # display error messages in document (TRUE) or stop render on error (FALSE)
@@ -181,17 +181,17 @@ dim(otu_untrimmed_taxonomy)
 # otu_good <- otu_untrimmed
 # otu_untrimmed_taxonomy <- load_tax("WholeLung_v_BALF.cons.taxonomy", otu_good = otu_untrimmed)
 # dim(otu_untrimmed_taxonomy)
-# otu_good_taxonomy <- otu_untrimmed_taxonomy
-#[1]  3391    7
+# otu_good_taxonomy <- otu_untrimmed_taxonomy #[1]  3391    7
+
 
 
 # trimmed dataset (dataset post-mothur that has been trimmed to omit OTUs < 0.1% of the sample population)
 #uncomment and run this chunk of code to see results for trimmed dataset
 #will also need to comment out the quality check chunk of code following analysis of MiSeq reads
-otu_good <- load_shared("WholeLung_v_BALF.shared")
-rownames(otu_good) <- str_remove(rownames(otu_good), "_S\\d+_L001_R1_001") %>% str_remove("_S\\d+_L001_R1")
-dim(otu_good) #[1] 120 773
-otu_good <- as.data.frame(otu_good)
+# otu_good <- load_shared("WholeLung_v_BALF.shared")
+# rownames(otu_good) <- str_remove(rownames(otu_good), "_S\\d+_L001_R1_001") %>% str_remove("_S\\d+_L001_R1")
+# dim(otu_good) #[1] 120 773
+# otu_good <- as.data.frame(otu_good)
 
 
 
