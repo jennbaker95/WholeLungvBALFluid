@@ -1,0 +1,11 @@
+.RData
+.Rhistory
+
+*.rdb
+*.rdx
+*.png
+*-1.pdf
+
+*_cache/
+/cache/
+
