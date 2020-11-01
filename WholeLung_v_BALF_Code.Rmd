@@ -37,6 +37,7 @@ library(ggpubr)         # data visualization, built on ggplot2
 
 # III. analysis packages
 library(vegan)          # decostand(), metaMDS(), scores(), rda(), ordispider(), adonis()
+library(ape)            # pcoa()
 
 # IV. functions for automating and streamlining workflow
 #library(devtools)      
@@ -906,6 +907,754 @@ geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3
   ) 
 
 ```
+\newpage
+# Supplemental Ordination Analyses: Principal Coordinate Analysis
+## 3.6 PCoA - Lung Samples v. Sampling Controls
+
+```{r PCoA - Lung Samples v. Sampling Controls - Percentage Normalized}
+
+#subset otu.df for PCA
+otu.df.lungsamp.sampctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "PBS" | Sample_Type == "Clean_Rinse" | Sample_Type == "Used_Rinse" | Sample_Type == "Homog_Ctrl")
+
+
+bray_df_perc <- otu.df.lungsamp.sampctrls %>% 
+  column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
+  dplyr::select(-c(Sample_Type:Shannon))
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_perc,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.sampctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "PBS", "Syringe_Rinse",  "Homog_Ctrl"),
+                                     labels = c("Lung", "BAL", "Saline", "Syringe Rinse",  "Homogenization\nControl"))
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#666B6E", #- saline
+              "#9A99E9", #- used rinse
+             "#F2C121" # saffron - water
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (14.8% explained)",
+    y = "Axis 2  (11.0% explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+```
+```{r PCoA - Lung Samples v. Sampling Controls - Raw Counts}
+#extract samples of interest with specified strings - returns vector of strings and NAs
+extract.lungsamp.sampctrls <- str_extract(rownames(otu_good), pattern="_BAL_|_Lung_|PBS|CLEAN|USED|Homog")
+
+#select subsets based on extracted samp names - returns a logical vector (NA --> FALSE)
+extract.lungsamp.sampctrls.good <- !is.na(extract.lungsamp.sampctrls)
+
+#subset otu counts 
+bray_df_raw <- otu_good[extract.lungsamp.sampctrls.good, ] 
+
+#subset otu.df for PCA
+otu.df.lungsamp.sampctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "PBS" | Sample_Type == "Clean_Rinse" | Sample_Type == "Used_Rinse" | Sample_Type == "Homog_Ctrl") %>% 
+    dplyr::select(Sample:Shannon)
+
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_raw,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.sampctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "PBS", "Syringe_Rinse",  "Homog_Ctrl"),
+                                     labels = c("Lung", "BAL", "Saline", "Syringe Rinse",  "Homogenization\nControl"))
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#666B6E", #- saline
+              "#9A99E9", #- used rinse
+             "#F2C121" # saffron - water
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (14.8% explained)",
+    y = "Axis 2  (11.0% explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+
+```
+
+## 3.7 PCoA - Lung Samples v. Isolation Controls
+```{r PCoA - Lung Samples v. Isolation Controls - Percentage Normalized}
+#subset otu.df for PCA
+otu.df.lungsamp.isoctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "Iso_Ctrl" | Sample_Type == "AE")
+
+bray_df_perc <- otu.df.lungsamp.isoctrls %>% 
+  column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
+  dplyr::select(-c(Sample_Type:Shannon))
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_perc,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.isoctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "AE", "Iso_Ctrl"), 
+                                     labels = c("Lung", "BAL", "Elution\nBuffer", "Isolation\nControl"))
+
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#DBE6EC", #- AE
+              "#666B6E" #- iso ctrl
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (13.7% of variance explained)",
+    y = "Axis 2  (10.2% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+```
+```{r PCoA - Lung Samples v. Isolation Controls - Raw Counts}
+#extract samples of interest with specified strings - returns vector of strings and NAs
+extract.lungsamp.isoctrls <- str_extract(rownames(otu_good), pattern="_BAL_|_Lung_|_IsoCtrl_|AE")
+
+#select subsets based on extracted samp names - returns a logical vector (NA --> FALSE)
+extract.lungsamp.isoctrls.good <- !is.na(extract.lungsamp.isoctrls)
+
+#subset otu counts 
+bray_df_raw <- otu_good[extract.lungsamp.isoctrls.good, ] 
+
+#subset otu.df for PCA
+otu.df.lungsamp.isoctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "Iso_Ctrl" | Sample_Type == "AE") %>% 
+    dplyr::select(Sample:Shannon)
+
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_raw,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.isoctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "AE", "Iso_Ctrl"), 
+                                     labels = c("Lung", "BAL", "Elution\nBuffer", "Isolation\nControl"))
+
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#DBE6EC", #- AE
+              "#666B6E" #- iso ctrl
+        )
+
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (13.3% of variance explained)",
+    y = "Axis 2  (10.0% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+
+```
+
+## 3.8 PCoA - Lung Samples v. Sequencing Controls
+```{r PCoA - Lung Samples v. Sequencing Controls - Percentage Normalized}
+
+#subset otu.df for PCA
+otu.df.lungsamp.seqctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "Water" | Sample_Type == "Empty")
+
+bray_df_perc <- otu.df.lungsamp.seqctrls %>% 
+  column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
+  dplyr::select(-c(Sample_Type:Shannon))
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_perc,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.seqctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "Empty", "Water"), 
+                                     labels = c("Lung", "BAL", "Empty\nWell", "Water"))
+
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#F2C121", #- Empty
+              "#666B6E" #- Water
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (14.8% of variance explained)",
+    y = "Axis 2  (11.0% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+```
+```{r PCoA - Lung Samples v. Isolation Controls - Raw Counts}
+#extract samples of interest with specified strings - returns vector of strings and NAs
+extract.lungsamp.seqctrls <- str_extract(rownames(otu_good), pattern="_BAL_|_Lung_|Water|Blank")
+
+#select subsets based on extracted samp names - returns a logical vector (NA --> FALSE)
+extract.lungsamp.seqctrls.good <- !is.na(extract.lungsamp.seqctrls)
+
+#subset otu counts 
+bray_df_raw <- otu_good[extract.lungsamp.seqctrls.good, ] 
+
+#subset otu.df for PCA
+otu.df.lungsamp.seqctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "Water" | Sample_Type == "Empty") %>% 
+    dplyr::select(Sample:Shannon)
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_raw,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.lungsamp.seqctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(Sample_Type2) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="Sample_Type2") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$Sample_Type2 <- factor(pc_plot_data$Sample_Type2, 
+                                     levels = c("Lung", "BAL", "Empty", "Water"), 
+                                     labels = c("Lung", "BAL", "Empty\nWell", "Water"))
+
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#F2C121", #- Empty
+              "#666B6E" #- Water
+        )
+
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (8.6% of variance explained)",
+    y = "Axis 2  (6.7% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+
+```
+
+
+## 3.9 PCoA - Lung Samples v. Tongue 
+```{r PCoA - Lung Samples v. Tongue - Percentage Normalized}
+
+#subset otu.df for PCA
+otu.df.tong.lungsamp <- filter(otu_df, Sample_Type == "Tongue" | Sample_Type == "BAL" | Sample_Type == "Lung")
+
+otu.df.tong.lungsamp <- mutate(otu.df.tong.lungsamp, PCA_Groups = ifelse(
+                                          test = Organ == "Lung",             
+                                          yes =  as.character(RA_Groups), 
+                                          no = as.character(Organ))) %>% 
+ dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ 
+
+otu.df.tong.lungsamp$PCA_Groups <- as.factor(otu.df.tong.lungsamp$PCA_Groups)
+
+bray_df_perc <- otu.df.tong.lungsamp %>% 
+  column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
+  dplyr::select(-c(Sample_Type:Shannon))
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_perc,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.tong.lungsamp)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(PCA_Groups) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="PCA_Groups") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$PCA_Groups <- factor(pc_plot_data$PCA_Groups, 
+                              levels = c("Lung", "BAL", "Tongue"))
+                                    
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#FB9986" #vivid tangerine - tongue
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (11.1% of variance explained)",
+    y = "Axis 2  (8.5% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+```
+```{r PCoA - Lung Samples v. Tongue - Raw Counts}
+#extract samples of interest with specified strings - returns vector of strings and NAs
+extract.tong.lungsamp <- str_extract(rownames(otu_good), pattern="Tong|_BAL_|_Lung_")
+
+#select subsets based on extracted samp names - returns a logical vector (NA --> FALSE)
+extract.tong.lungsamp.good <- !is.na(extract.tong.lungsamp)
+
+#subset otu counts 
+bray_df_raw <- otu_good[extract.tong.lungsamp.good, ] 
+
+#subset otu.df for PCA
+otu.df.tong.lungsamp <- filter(otu_df, Sample_Type == "Tongue" | Sample_Type == "BAL" | Sample_Type == "Lung")
+
+otu.df.tong.lungsamp <- mutate(otu.df.tong.lungsamp, PCA_Groups = ifelse(
+                                          test = Organ == "Lung",             
+                                          yes =  as.character(RA_Groups), 
+                                          no = as.character(Organ))) %>% 
+ dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ 
+
+otu.df.tong.lungsamp$PCA_Groups <- as.factor(otu.df.tong.lungsamp$PCA_Groups)
+
+
+otu.df.tong.lungsamp <- otu.df.tong.lungsamp %>% dplyr::select(Sample:Shannon)
+
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_raw,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.tong.lungsamp)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(PCA_Groups) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="PCA_Groups") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$PCA_Groups <- factor(pc_plot_data$PCA_Groups, 
+                              levels = c("Lung", "BAL", "Tongue"))
+                                    
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#FB9986" #vivid tangerine - tongue
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (11.1% of variance explained)",
+    y = "Axis 2  (8.5% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+
+```
+
+## 3.10 PCoA - Lung v. Negative Controls
+
+```{r PCoA - Lung Samples v. Negative Controls - Percentage Normalized}
+
+#subset otu.df for PCA
+otu.df.tong.lungsamp.allnegctrls <- filter(otu_df, Sample_Type == "Tongue" | Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "PBS" | Sample_Type == "Clean_Rinse" | Sample_Type == "Used_Rinse" | Sample_Type == "Homog_Ctrl" | Sample_Type == "AE" | Sample_Type == "Iso_Ctrl" | Sample_Type == "Water" | Sample_Type == "Empty")
+
+otu.df.tong.lungsamp.allnegctrls <- mutate(otu.df.tong.lungsamp.allnegctrls, PCA_Groups = ifelse(
+                                          test = Organ == "Lung",             
+                                          yes =  as.character(RA_Groups), 
+                                          no = as.character(Organ))) %>% 
+ dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+
+otu.df.tong.lungsamp.allnegctrls$PCA_Groups <- as.factor(otu.df.tong.lungsamp.allnegctrls$PCA_Groups)
+
+bray_df_perc <- otu.df.tong.lungsamp.allnegctrls %>% 
+  column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
+  dplyr::select(-c(Sample_Type:Shannon))
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_perc,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.tong.lungsamp.allnegctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(PCA_Groups) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="PCA_Groups") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$PCA_Groups <- factor(pc_plot_data$PCA_Groups, 
+                              levels = c("Lung", "BAL", "Tongue", "Sampling Control", "Isolation Control", "Sequencing Control"))
+                                    
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#FB9986", #vivid tangerine - tongue
+              "#0BDBA7", #sea foam green - sampling ctrls
+              "#F2C121", #- isolation ctrls 
+              "#666B6E" #- sequencing ctrls
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (5.5% of variance explained)",
+    y = "Axis 2  (4.4% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+```
+
+
+```{r PCoA - Lung Samples v. Tongue - Raw Counts}
+#extract samples of interest with specified strings - returns vector of strings and NAs
+extract.tong.lungsamp.allnegctrls <- str_extract(rownames(otu_good), pattern="Tong|_BAL_|_Lung_|PBS|CLEAN|USED|Homog|AE|Iso|Water|Blank")
+
+#select subsets based on extracted samp names - returns a logical vector (NA --> FALSE)
+extract.tong.lungsamp.allnegctrls.good <- !is.na(extract.tong.lungsamp.allnegctrls)
+
+#subset otu counts 
+bray_df_raw <- otu_good[extract.tong.lungsamp.allnegctrls.good, ] 
+
+#subset otu.df for PCA
+otu.df.tong.lungsamp.allnegctrls <- filter(otu_df, Sample_Type == "Tongue" | Sample_Type == "BAL" | Sample_Type == "Lung" | Sample_Type == "PBS" | Sample_Type == "Clean_Rinse" | Sample_Type == "Used_Rinse" | Sample_Type == "Homog_Ctrl" | Sample_Type == "AE" | Sample_Type == "Iso_Ctrl" | Sample_Type == "Water" | Sample_Type == "Empty")
+
+otu.df.tong.lungsamp.allnegctrls <- mutate(otu.df.tong.lungsamp.allnegctrls, PCA_Groups = ifelse(
+                                          test = Organ == "Lung",             
+                                          yes =  as.character(RA_Groups), 
+                                          no = as.character(Organ))) %>% 
+ dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+
+otu.df.tong.lungsamp.allnegctrls$PCA_Groups <- as.factor(otu.df.tong.lungsamp.allnegctrls$PCA_Groups)
+otu.df.tong.lungsamp.allnegctrls <- otu.df.tong.lungsamp.allnegctrls %>% dplyr::select(Sample:Shannon)
+
+
+# First step is to calculate a distance matrix. 
+# Here we use Bray-Curtis distance metric
+dist <- vegdist(bray_df_raw,  method = "bray")
+PCOA <- pcoa(dist)
+
+# Extract the plot scores from first two PCoA axes (if you need them):
+PCOAaxes <- PCOA$vectors[,c(1,2)] %>% 
+            as.data.frame() %>% 
+            rownames_to_column("Sample")
+
+pcoa_df <- left_join(PCOAaxes, otu.df.tong.lungsamp.allnegctrls)
+
+# calculate the mean x coordinate and y coordinate for each sample in PC1/PC2 space
+centroids <- pcoa_df %>% 
+  group_by(PCA_Groups) %>%
+  summarize(x_coord=mean(Axis.1), y_coord=mean(Axis.2)) %>%  
+  ungroup()
+
+# to EACH SUBJECT in the pc object, add a column which contains the x and y
+#coordinates for the centroid for the group that the subject belongs to
+pc_plot_data <- full_join(pcoa_df, centroids, by ="PCA_Groups") 
+# Now you can use your dataframe and mainpulate it how you want
+
+pc_plot_data$PCA_Groups <- factor(pc_plot_data$PCA_Groups, 
+                              levels = c("Lung", "BAL", "Tongue", "Sampling Control", "Isolation Control", "Sequencing Control"))
+                                    
+
+pca_pal <- c( "#EB3D0E", #scarlet - lung
+               "#0300A6", # blue - BAL
+              "#FB9986", #vivid tangerine - tongue
+              "#0BDBA7", #sea foam green - sampling ctrls
+              "#F2C121", #- isolation ctrls 
+              "#666B6E" #- sequencing ctrls
+        )
+
+# plot PCA 
+ggplot(pc_plot_data, aes(x = Axis.1, y = Axis.2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
+  geom_segment(aes(x=x_coord, xend = Axis.1, y=y_coord, yend = Axis.2), color = "black") + 
+  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 3) +
+  # segment starting at centroid, ending at point
+geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3, show.legend = FALSE) + # centroid information
+  theme_classic() +
+  theme(legend.title = element_blank(), 
+      axis.text.y = element_text(size=15), 
+      axis.text.x = element_text(size=15), 
+      axis.title.y = element_text(size=12, face="bold", vjust = 0), 
+      axis.title.x = element_text(size=12, face="bold", vjust = 0), 
+      plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")
+            ) + 
+  scale_x_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  scale_y_continuous(limits = c(-0.6, 0.6), breaks = seq(-0.5, 0.5, 0.5)) +
+  labs(
+    x = "\nAxis 1 (5.5% of variance explained)",
+    y = "Axis 2  (4.4% of variance explained)\n"
+  ) + scale_color_manual(values=pca_pal)
+
+```
+
+
 
 \newpage
 # IV. Diversity Indices 
