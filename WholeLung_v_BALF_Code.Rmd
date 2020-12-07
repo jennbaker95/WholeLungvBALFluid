@@ -40,8 +40,8 @@ library(vegan)          # decostand(), metaMDS(), scores(), rda(), ordispider(),
 library(ape)            # pcoa()
 
 # IV. functions for automating and streamlining workflow
-#library(devtools)      
-#devtools::install_github("https://github.com/cb-42/cbmbtools")
+# library(devtools)
+# devtools::install_github("https://github.com/cb-42/cbmbtools")
 library(cbmbtools)
 
 #V. Rmarkdown formatting
@@ -71,7 +71,7 @@ set.seed(3132)
 ```{r load & prep 16S ddPCR quantification data, include = FALSE}
 
 ddpcr <- read.csv("WholeLung_v_BALF_16S_ddPCR_quantification.csv", header=T, stringsAsFactors = T)
-colnames(ddpcr) <- c("Sample", "Gene_16S_copies_per_mL")
+colnames(ddpcr) <- c("Sample", "Gene_16S_copies_per_specimen")
 
 ddpcr <- mutate(ddpcr, Sample_Type = factor(case_when(
                                               str_detect(Sample, "BAL_") ~ "BAL", 
@@ -96,12 +96,13 @@ ddpcr <- mutate(ddpcr, Sample_Type = factor(case_when(
 ddpcr <- ddpcr %>% group_by(Sample_Type)
 
 ddpcr.summary <- summarize(ddpcr, 
-                            Mean=mean(Gene_16S_copies_per_mL), 
-                            SEM=sqrt(var(Gene_16S_copies_per_mL)/length(Gene_16S_copies_per_mL)))
+                            Mean=mean(Gene_16S_copies_per_specimen), 
+                            SEM=sqrt(var(Gene_16S_copies_per_specimen)/length(Gene_16S_copies_per_specimen)))
 
+#pdf("Figure2.pdf", width = 8, height = 6, useDingbats = FALSE)
 ggplot(ddpcr, aes(x=Sample_Type)) + 
   geom_col(data=ddpcr.summary, aes(x=Sample_Type, y=Mean, fill=Sample_Type), color= "black", show.legend = FALSE) +
-  geom_point(aes(x=Sample_Type, y=Gene_16S_copies_per_mL)) +
+  geom_point(aes(x=Sample_Type, y=Gene_16S_copies_per_specimen)) +
   geom_errorbar(data=ddpcr.summary, aes(ymin = Mean-SEM, ymax = Mean+SEM, width = 0.3)) + 
   theme_classic() + 
   scale_y_log10(
@@ -113,8 +114,9 @@ theme(axis.text.y = element_text(size=12),
       axis.title.y = element_text(size=12, face="bold", angle = 0, vjust=0.5), 
       axis.title.x = element_text(size=12, face="bold"), 
       plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")) + 
-ylab("16S rRNA Gene\nCopies/mL") +
+ylab("16S rRNA Gene\nCopies/specimen") +
 xlab("\nSample Type") 
+#dev.off()
 
 
 ```
@@ -122,10 +124,10 @@ xlab("\nSample Type")
 ## Hypothesis testing - 16S rRNA gene amplicon quantification
 ```{r 16S ddPCR quantification - hypothesis testing}
 #overall difference between groups - kruskal wallis test for multiple group comparisons 
-kruskal.test(Gene_16S_copies_per_mL ~ Sample_Type, data=ddpcr)
+kruskal.test(Gene_16S_copies_per_specimen ~ Sample_Type, data=ddpcr)
 
 #pairwise difference between groups - Wilcoxon rank sum test, adjusted for multiple comparisons
-pairwise.wilcox.test(ddpcr$Gene_16S_copies_per_mL, ddpcr$Sample_Type, p.adjust.method = "BH")
+pairwise.wilcox.test(ddpcr$Gene_16S_copies_per_specimen, ddpcr$Sample_Type, p.adjust.method = "BH")
 
 ```
 
@@ -303,9 +305,9 @@ otu_df <- left_join(otu_df, miseq_reads, by = c("Sample" = "Final.Sample.Name"))
 
 # add ddPCR 16S quantification data to otu_df
 ddpcr <- ungroup(ddpcr) 
-ddpcr_join <- dplyr::select(ddpcr, Sample, Gene_16S_copies_per_mL)
+ddpcr_join <- dplyr::select(ddpcr, Sample, Gene_16S_copies_per_specimen)
 otu_df <- left_join(otu_df, ddpcr_join, by = "Sample") %>% 
-  dplyr::select(Sample:Reads.PF.Sample, Gene_16S_copies_per_mL, everything())
+  dplyr::select(Sample:Reads.PF.Sample, Gene_16S_copies_per_specimen, everything())
 
 ```
 
@@ -349,6 +351,7 @@ otu.total.counts.byExpt$Sample_Type2 <- factor(otu.total.counts.byExpt$Sample_Ty
                                                levels = c("Mock", "Water", "Empty", "AE", "Iso_Ctrl", "PBS", "Syringe_Rinse", "Homog_Ctrl", "BAL", "Lung", "Tongue", "Cecum"))
 
 # plot OTU counts by sample type
+
 ggplot(otu.total.counts.byExpt, aes(x=Sample_Type2, y=OTU_Count)) + 
   geom_boxplot(aes(fill = Sample_Type2), show.legend=FALSE) + 
   geom_point() + 
@@ -364,6 +367,7 @@ theme(axis.text.y = element_text(size=12),
       plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")) + 
 ylab("OTU\nCount") +
 xlab("\nSample Type") 
+
 
 ```
 
@@ -388,7 +392,7 @@ otu_df_plot_reads$Sample_Type2 <- factor(otu_df_plot_reads$Sample_Type2,
                                                levels = c("Mock", "Water", "Empty", "AE", "Iso_Ctrl", "PBS", "Syringe_Rinse", "Homog_Ctrl", "BAL", "Lung", "Tongue", "Cecum"))
 
 # plot total reads by sample type
-#pdf(file = "Raw_Read_Count.pdf", height = 5, width = 12, useDingbats = FALSE)
+#pdf("Figure_S1.pdf", height = 6, width = 10, useDingbats = FALSE)
 ggplot(otu_df_plot_reads, aes(x=Sample_Type2, y=Total_Reads)) + 
   geom_boxplot(aes(fill = Sample_Type2), show.legend=FALSE) + 
   geom_point() + 
@@ -404,7 +408,7 @@ theme(axis.text.y = element_text(size=12),
       plot.margin = unit(c(0.5,0.5,0.5,0.5), "cm")) + 
 ylab("Raw\nRead\nCount\n") +
 xlab("\nSample Type") + 
-geom_hline(yintercept = 100, linetype = "dashed", alpha = 0.5)
+geom_hline(yintercept = 150, linetype = "dashed", alpha = 0.5)
 #dev.off()
 
 
@@ -423,13 +427,13 @@ max(raw_reads_by_sample$Total_Reads)
 ```{r quality checks, include = FALSE}
 
 #display samples with less than 100 reads in a table
-samples_below_100_read_threshold <- dplyr::filter(otu_df_plot_reads, Total_Reads <= 100) %>% 
+samples_below_150_read_threshold <- dplyr::filter(otu_df_plot_reads, Total_Reads <= 150) %>% 
                                     dplyr::select(Sample, Organ, Total_Reads)
 
-kable(samples_below_100_read_threshold)
+kable(samples_below_150_read_threshold)
 
 #create vector to filter samples with low read counts out 
-samples.to.exclude <- samples_below_100_read_threshold$Sample %>% as.vector()
+samples.to.exclude <- samples_below_150_read_threshold$Sample %>% as.vector()
 
 #QC step - remove samples which have less than 100 reads from dataframes used in main analysis
  otu_df <- dplyr::filter(otu_df, !(Sample %in% samples.to.exclude))
@@ -493,6 +497,7 @@ pca_pal <- c( "#EB3D0E", #scarlet - lung
         )
 
 # plot PCA 
+#pdf("Figure_5A.pdf", width=6, height=6, useDingbats = FALSE)
 ggplot(pc_plot_data, aes(x = PC1, y = PC2)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
@@ -511,9 +516,10 @@ geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), si
   scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, 0.5)) +
   scale_y_continuous(limits = c(-1.1, 1.1), breaks = seq(-1,1,0.5)) +
   labs(
-    x = "\nPrincipal Component 1 (13.7% explained)",
+    x = "\nPrincipal Component 1 (15.1% explained)",
     y = "Principal Component 2  (7.0% explained)\n"
   ) + scale_color_manual(values=pca_pal)
+#dev.off()
 
 ```
 
@@ -608,6 +614,7 @@ pca_pal <- c( "#EB3D0E", #scarlet - lung
         )
 
 # plot PCA
+pdf("Figure_S3A.pdf", height=6, width=6, useDingbats = FALSE)
 ggplot(pc_plot_data, aes(x = PC1, y = PC2)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
@@ -625,11 +632,12 @@ geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), si
             ) + 
   scale_color_manual(values = pca_pal) + 
   scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, 0.5)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), breaks = seq(-1,1,0.5)) +
+  scale_y_continuous(limits = c(-1, 1.5), breaks = seq(-1,1.5,0.5)) +
   labs(
-    x = "\nPrincipal Component 1 (12.1% explained)",
-    y = "Principal Component 2  (9.0% explained)\n"
+    x = "\nPrincipal Component 1 (13.6% explained)",
+    y = "Principal Component 2  (9.5% explained)\n"
   ) 
+dev.off()
 
 ```
 
@@ -711,13 +719,14 @@ pca_pal <- c( "#EB3D0E", #scarlet - lung
               "#666B6E" #- Water
         )
 
+pdf("Figure_S3B.pdf", height=6, width=6, useDingbats = FALSE)
 ggplot(pc_plot_data, aes(x = PC1, y = PC2)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_segment(aes(x=x_coord, xend = PC1, y=y_coord, yend = PC2), color = "black") + 
   geom_point(show.legend = FALSE, aes(color = Sample_Type2), size = 3) +
   # segment starting at centroid, ending at point
-geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
+#geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), size=3, show.legend = FALSE) + # centroid information
   theme_classic() +
   theme(legend.title = element_blank(), 
       axis.text.y = element_text(size=15), 
@@ -728,11 +737,12 @@ geom_label(aes(x=x_coord, y=y_coord, label=Sample_Type2, color=Sample_Type2), si
             ) + 
   scale_color_manual(values = pca_pal) + 
   scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, 0.5)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), breaks = seq(-1,1,0.5)) +
+  scale_y_continuous(limits = c(-1, 1), breaks = seq(-1,1,0.5)) +
   labs(
-    x = "\nPrincipal Component 1 (13.5% explained)",
-    y = "Principal Component 2  (6.6% explained)\n"
+    x = "\nPrincipal Component 1 (15.3% explained)",
+    y = "Principal Component 2  (8.0% explained)\n"
   ) 
+dev.off()
 
 ```
 
@@ -784,7 +794,7 @@ otu.df.tong.lungsamp <- mutate(otu.df.tong.lungsamp, PCA_Groups = ifelse(
                                           test = Organ == "Lung",             
                                           yes =  as.character(RA_Groups), 
                                           no = as.character(Organ))) %>% 
- dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ dplyr::select(Sample:Gene_16S_copies_per_specimen, PCA_Groups, everything())
  
 
 otu.df.tong.lungsamp$PCA_Groups <- as.factor(otu.df.tong.lungsamp$PCA_Groups)
@@ -824,12 +834,12 @@ pca_pal <- c( "#EB3D0E", #scarlet - lung
               "#FB9986" #vivid tangerine - tongue
         )
 
-
+#pdf("Figure_5B.pdf", height=6, width=6, useDingbats = FALSE)
 ggplot(pc_plot_data, aes(x = PC1, y = PC2)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) + 
   geom_segment(aes(x=x_coord, xend = PC1, y=y_coord, yend = PC2), color = "black") + 
-  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 2) +
+  geom_point(show.legend = FALSE, aes(color = PCA_Groups), size = 3) +
   # segment starting at centroid, ending at point
 geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3, show.legend = FALSE) + # centroid information
   theme_classic() +
@@ -844,9 +854,10 @@ geom_label(aes(x=x_coord, y=y_coord, label=PCA_Groups, color=PCA_Groups), size=3
   scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, 0.5)) +
   scale_y_continuous(limits = c(-1.1, 1.1), breaks = seq(-1,1,0.5)) +
   labs(
-    x = "\nPrincipal Component 1 (10.5% explained)",
-    y = "Principal Component 2  (4.6% explained)\n"
+    x = "\nPrincipal Component 1 (12.8% explained)",
+    y = "Principal Component 2  (5.6% explained)\n"
   ) 
+#dev.off()
 
 ```
 
@@ -901,7 +912,7 @@ otu.df.tong.lungsamp.allnegctrls <- mutate(otu.df.tong.lungsamp.allnegctrls, PCA
                                           test = Organ == "Lung",             
                                           yes =  as.character(RA_Groups), 
                                           no = as.character(Organ))) %>% 
- dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ dplyr::select(Sample:Gene_16S_copies_per_specimen, PCA_Groups, everything())
 
 otu.df.tong.lungsamp.allnegctrls$PCA_Groups <- as.factor(otu.df.tong.lungsamp.allnegctrls$PCA_Groups)
 
@@ -981,7 +992,7 @@ otu.df.lungsamp.sampctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type =
 
 bray_df_perc <- otu.df.lungsamp.sampctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 # First step is to calculate a distance matrix. 
 # Here we use Bray-Curtis distance metric
@@ -1047,7 +1058,7 @@ otu.df.lungsamp.sampctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type =
 #remove metadata
 bray_df_perc <- otu.df.lungsamp.sampctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 #prepare df to be filtered for pairwise comparisons
 adonis.select.vec <- dplyr::select(otu.df.lungsamp.sampctrls, Sample:Sample_Type)
@@ -1095,7 +1106,7 @@ otu.df.lungsamp.isoctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type ==
 
 bray_df_perc <- otu.df.lungsamp.isoctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 # First step is to calculate a distance matrix. 
 # Here we use Bray-Curtis distance metric
@@ -1162,7 +1173,7 @@ otu.df.lungsamp.isoctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type ==
 #remove metadata
 bray_df_perc <- otu.df.lungsamp.isoctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 #prepare df to be filtered for pairwise comparisons
 adonis.select.vec <- dplyr::select(otu.df.lungsamp.isoctrls, Sample:Sample_Type)
@@ -1203,7 +1214,7 @@ otu.df.lungsamp.seqctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type ==
 
 bray_df_perc <- otu.df.lungsamp.seqctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 # First step is to calculate a distance matrix. 
 # Here we use Bray-Curtis distance metric
@@ -1270,7 +1281,7 @@ otu.df.lungsamp.seqctrls <- filter(otu_df, Sample_Type == "BAL" | Sample_Type ==
 #remove metadata
 bray_df_perc <- otu.df.lungsamp.seqctrls %>% 
   column_to_rownames("Sample")  %>% # This turns the specimen column into the rownames.
-  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_mL))
+  dplyr::select(-c(Sample_Type:Gene_16S_copies_per_specimen))
 
 
 #prepare df to be filtered for pairwise comparisons
@@ -1315,7 +1326,7 @@ otu.df.tong.lungsamp <- mutate(otu.df.tong.lungsamp, PCA_Groups = ifelse(
                                           test = Organ == "Lung",             
                                           yes =  as.character(RA_Groups), 
                                           no = as.character(Organ))) %>% 
- dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ dplyr::select(Sample:Gene_16S_copies_per_specimen, PCA_Groups, everything())
  
 
 otu.df.tong.lungsamp$PCA_Groups <- as.factor(otu.df.tong.lungsamp$PCA_Groups)
@@ -1387,7 +1398,7 @@ otu.df.tong.lungsamp <- mutate(otu.df.tong.lungsamp, PCA_Groups = ifelse(
                                           test = Organ == "Lung",             
                                           yes =  as.character(RA_Groups), 
                                           no = as.character(Organ))) %>% 
- dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ dplyr::select(Sample:Gene_16S_copies_per_specimen, PCA_Groups, everything())
  
 
 otu.df.tong.lungsamp$PCA_Groups <- as.factor(otu.df.tong.lungsamp$PCA_Groups)
@@ -1440,7 +1451,7 @@ otu.df.tong.lungsamp.allnegctrls <- mutate(otu.df.tong.lungsamp.allnegctrls, PCA
                                           test = Organ == "Lung",             
                                           yes =  as.character(RA_Groups), 
                                           no = as.character(Organ))) %>% 
- dplyr::select(Sample:Gene_16S_copies_per_mL, PCA_Groups, everything())
+ dplyr::select(Sample:Gene_16S_copies_per_specimen, PCA_Groups, everything())
 
 otu.df.tong.lungsamp.allnegctrls$PCA_Groups <- as.factor(otu.df.tong.lungsamp.allnegctrls$PCA_Groups)
 
@@ -1518,6 +1529,10 @@ otu_raw_rare <- otu_raw
 rownames(otu_raw_rare) <-  str_remove(string = rownames(otu_raw_rare), pattern = "_S\\d+_L001_R1_001") %>% str_remove(pattern = "_S\\d+_L001_R1") 
 otu_raw_rare <- dplyr::select(otu_raw_rare, -label, -numOtus)
 
+#exclude samples with low read count from analysis
+otu_raw_rare <- dplyr::filter(otu_raw_rare, !(rownames(otu_raw_rare) %in% samples.to.exclude))
+
+
 
 # Generate the rarefaction data, combine with metadata, transform for plotting, and aggregate
 rarefy_agg <- rarefy(otu_raw_rare, sample = 1:1000) %>% # subsample for each number in 1:1000; an alternative is to set sample = to the integer length of primary interest, e.g. 1000
@@ -1555,6 +1570,9 @@ otu_raw_rare <- otu_raw
 rownames(otu_raw_rare) <-  str_remove(string = rownames(otu_raw_rare), pattern = "_S\\d+_L001_R1_001") %>% str_remove(pattern = "_S\\d+_L001_R1") 
 otu_raw_rare <- dplyr::select(otu_raw_rare, -label, -numOtus)
 
+#exclude samples with low read count from analysis
+otu_raw_rare <- dplyr::filter(otu_raw_rare, !(rownames(otu_raw_rare) %in% samples.to.exclude)) 
+
 #remove Zymo mock positive controls
 #tvl.rownames are the rownames of the samples we want to keep 
 tvl.rownames <- vars_select(rownames(otu_raw_rare), !contains("Mock")) %>% as.data.frame() 
@@ -1570,16 +1588,14 @@ rarefy_agg <- rarefy(div.rare.bl, sample = 100) %>%
 as.data.frame() %>%
 rownames_to_column("Sample")
 
-colnames(rarefy_agg) <- c("Sample", "Unique_Otus_per_100_reads")
+colnames(rarefy_agg) <- c("Sample", "Unique_Taxa_per_100_reads")
 
 rarefy_agg <- left_join(rarefy_agg, dplyr::select(otu_df, Sample, Organ, Sample_Type2), by = "Sample")
 
-rarefy_agg <- dplyr::filter(rarefy_agg, !is.na(Organ))
-
 rarefy_agg_summary  <- rarefy_agg %>% 
                        group_by(Sample_Type2) %>%
-                       summarize(Mean_Species = mean(Unique_Otus_per_100_reads), 
-                                 SEM = sqrt(var(Unique_Otus_per_100_reads)/length(Unique_Otus_per_100_reads)))
+                       summarize(Mean_Species = mean(Unique_Taxa_per_100_reads), 
+                                 SEM = sqrt(var(Unique_Taxa_per_100_reads)/length(Unique_Taxa_per_100_reads)))
 rarefy_agg$Sample_Type2 <- factor(rarefy_agg$Sample_Type2, 
                               levels = c("Empty", "Water",  "AE", "Iso_Ctrl","Syringe_Rinse", "PBS", "Homog_Ctrl","BAL", "Lung",  "Tongue", "Cecum"))
 
@@ -1598,9 +1614,10 @@ rich_pal <- c( "#EB3D0E", #scarlet - lung
               "#666B6E" #- sequencing ctrls
         )
 
+#pdf("Figure_3.pdf", height = 6, width=8, useDingbats = FALSE)
 ggplot(rarefy_agg_summary, aes(x = Sample_Type2, y = Mean_Species, fill = Sample_Type2)) + # This brings in the aggregated dataframe and assigns columns to various plot elements
   geom_col(color="black", show.legend = FALSE) + # Add bars representing the mean of specimens' diversity
-  geom_point(data = rarefy_agg, aes(x = Sample_Type2, y = Unique_Otus_per_100_reads ), width = .2, show.legend = FALSE) + # Use specimen level data, map columns to scatterplot attributes
+  geom_point(data = rarefy_agg, aes(x = Sample_Type2, y = Unique_Taxa_per_100_reads ), width = .2, show.legend = FALSE) + # Use specimen level data, map columns to scatterplot attributes
   geom_errorbar(aes(ymin = Mean_Species - SEM, ymax = Mean_Species + SEM), width = 0.5, size=0.7) + # Add an errorbar layer
   theme_classic() + # A minimalist theme
   theme(axis.title.y = element_text(face = "bold", size = 12), 
@@ -1608,23 +1625,23 @@ ggplot(rarefy_agg_summary, aes(x = Sample_Type2, y = Mean_Species, fill = Sample
         axis.text.x = element_text(size = 10),
         axis.title.x = element_text(face = "bold", size = 12), 
         plot.margin=unit(c(0.5,0.5,0.5,1), "cm")) +
-  scale_y_continuous(limits = c(0,60), breaks = seq(0,60,10), expand = c(0,0)) + 
+  scale_y_continuous(limits = c(0,50), breaks = seq(0,50,10), expand = c(0,0)) + 
   labs(y = "Richness\n(No. of Unique OTUs/100 reads)\n", x = "\nSample Type") 
-
+#dev.off()
 ```
 
 ```{r rarefied richness - hypothesis testing}
 otu_df <- mutate(otu_df, Alpha_Div_Groups =  ifelse(test = Organ != "Lung", 
                                                  yes = as.character(Organ), 
                                                  no = as.character(Sample_Type))) %>% 
-        dplyr::select(Sample:Gene_16S_copies_per_mL, Alpha_Div_Groups, everything())
+        dplyr::select(Sample:Gene_16S_copies_per_specimen, Alpha_Div_Groups, everything())
 
-otu_df  <- left_join(otu_df, dplyr::select(rarefy_agg, Sample, Unique_Otus_per_100_reads)) %>%
-            dplyr::select(Sample:Gene_16S_copies_per_mL, Unique_Otus_per_100_reads, everything())
+otu_df  <- left_join(otu_df, dplyr::select(rarefy_agg, Sample, Unique_Taxa_per_100_reads)) %>%
+            dplyr::select(Sample:Gene_16S_copies_per_specimen, Unique_Taxa_per_100_reads, everything())
 
 tukey_otu_df <- filter(otu_df, Sample_Type!="Mock" & Sample_Type!="Cecum" & Sample_Type!="Tongue")
 
-TukeyHSD(aov(tukey_otu_df[,"Unique_Otus_per_100_reads"] ~ tukey_otu_df[, "Alpha_Div_Groups"]))
+TukeyHSD(aov(tukey_otu_df[,"Unique_Taxa_per_100_reads"] ~ tukey_otu_df[, "Alpha_Div_Groups"]))
 
 ```
 \newpage
@@ -1650,7 +1667,7 @@ div.shan$Sample_Type2 <- factor(div.shan$Sample_Type2, levels = c("Mock", "Empty
 
 div.shan <- filter(div.shan, Sample_Type2 != "Mock")
 
-
+#pdf("Figure_S2.pdf", width = 8, height = 6, useDingbats = FALSE)
 ggplot(agg_shan_all, aes(x = Sample_Type2, y = Mean_Sh, fill = Sample_Type2)) + # This brings in the aggregated dataframe and assigns columns to various plot elements
   geom_col(color="black", show.legend = FALSE) + # Add bars representing the mean of specimens' Shannon diversity by vendor
   geom_point(data = div.shan, aes(x = Sample_Type2, y = Shannon), width = .2, show.legend = FALSE) + # Use specimen level data, map columns to scatterplot attributes
@@ -1661,8 +1678,9 @@ ggplot(agg_shan_all, aes(x = Sample_Type2, y = Mean_Sh, fill = Sample_Type2)) + 
         axis.text.x = element_text(size = 10),
         axis.title.x = element_text(face = "bold", size = 15), 
         plot.margin=unit(c(0.5,0.5,0.5,1), "cm")) + 
-  scale_y_continuous(limits = c(-0.01,4.5), breaks = seq(0,4,1), expand = c(0,0)) + 
+  scale_y_continuous(limits = c(0,4), breaks = seq(0,4,1), expand = c(0,0)) + 
   labs(y = "Shannon Diversity Index\n", x = "\nSample Type") 
+#dev.off()
 
 ```
 
@@ -1672,6 +1690,7 @@ tukey_otu_df <- dplyr::filter(otu_df, Sample_Type != "Mock" & Sample_Type != "Ce
 TukeyHSD(aov(tukey_otu_df[,"Shannon"] ~ tukey_otu_df[, "Alpha_Div_Groups"]))
 
 ```
+
 \newpage
 ## 4.3 Beta Diversity - Bray-Curtis dissimilarity Index within Sample Type
 
@@ -1686,8 +1705,8 @@ bray_df_lbtce <- dplyr::filter(otu_df, Sample_Type2 == "Lung" | Sample_Type2 == 
 sample_df <- rownames(bray_df_lbtce) %>% as.data.frame()
 colnames(sample_df) <- c("Sample")
 sample_df <- mutate(sample_df, Sample_Type = factor(str_extract(Sample, pattern="Lung|BAL|Tongue|Cecum|Blank")))
-dim(sample_df) #[1] 84  2
-comb_all <- combinations(n = 84, r = 2, v = sample_df$Sample) %>% as.data.frame()
+dim(sample_df) #[1] 83  2
+comb_all <- combinations(n = 83, r = 2, v = sample_df$Sample) %>% as.data.frame()
 colnames(comb_all) <- c("Sample", "Comparison")
 comb_all_mut <- mutate(comb_all, Sample_Type = factor(str_extract(Sample, pattern="Lung|BAL|Tongue|Cecum|Blank")),
                                     Comparison_Type = factor(str_extract(Comparison, pattern="Lung|BAL|Tongue|Cecum|Blank")))
@@ -1712,10 +1731,11 @@ bray_dist_lbtce_summary <- ungroup(bray_dist_lbtce_summary) %>%
 bray_dist_lbtce_summary$Sample_Type <- factor(bray_dist_lbtce_summary$Sample_Type, 
                                      levels = c("Blank", "BAL","Lung", "Tongue", "Cecum"))
 
-ggplot(bray_dist_lbtce_summary, aes(x=Sample_Type, y = Mean_BC)) + 
+#pdf("Figure_4.pdf", height = 4, width = 6, useDingbats = FALSE)
+p <- ggplot(bray_dist_lbtce_summary, aes(x=Sample_Type, y = Mean_BC)) + 
   geom_boxplot(aes(fill=Sample_Type), show.legend = FALSE) + 
   geom_point() + 
-  scale_y_continuous(limits = c(0,1.01), expand = c(0,0)) + 
+  scale_y_continuous(limits = c(0,1.1), expand = c(0,0)) + 
   theme_classic() + 
   theme(axis.title.y = element_text(face = "bold", size = 15), 
         axis.text.y = element_text(size = 15),
@@ -1724,7 +1744,9 @@ ggplot(bray_dist_lbtce_summary, aes(x=Sample_Type, y = Mean_BC)) +
         plot.margin=unit(c(0.5,0.5,0.5,1), "cm")) + 
   labs(y = "Bray-Curtis Dissimilarity\n", x = "\nSample Type") + 
   scale_fill_manual(values=c("#DBE6EC","#0300A6", "#EB3D0E", "#0BDBA7", "#0BDBA7"))
+#dev.off()
 
+ggplotly(p)
 ```
 
 ```{r Bray-Curtis dissimilarity by sample type - hypothesis testing}
@@ -1795,11 +1817,36 @@ otu_df <- dplyr::mutate(otu_df, RA_Groups = ifelse(test = is.na(RA_Groups),
 otu_df$RA_Groups <- as.factor(otu_df$RA_Groups)
 
 gg.bal.lung.neg.tong.RAG.ordL <- filter(otu_df, Sample_Type != "Cecum" & Sample_Type != "Mock") %>% 
-taxon_sort_gather(facet_var="RA_Groups", ord_val = "Lung")
+taxon_sort_gather(facet_var="RA_Groups", ord_val = "Lung") #%>% droplevels()
+
+gg.bal.lung.neg.tong.RAG.ordL.ind <- filter(otu_df, Sample_Type != "Cecum" & Sample_Type != "Mock") %>% tsg_ind(sample_col = "Sample", otu_vec = levels(gg.bal.lung.neg.tong.RAG.ordL$OTU)) #%>% droplevels()
 
 gg.bal.lung.neg.tong.RAG.ordL$RA_Groups <- factor(gg.bal.lung.neg.tong.RAG.ordL$RA_Groups, levels = c("Lung","Tongue", "BAL", "Negative Control"), labels = c("Lung","Tongue", "BAL", "Negative\nControls"))
 
-plot_ra(gg.bal.lung.neg.tong.RAG.ordL, fill = "RA_Groups", error_bar = T) + facet_grid(RA_Groups~.) +
+gg.bal.lung.neg.tong.RAG.ordL.ind$RA_Groups <- factor(gg.bal.lung.neg.tong.RAG.ordL.ind$RA_Groups, levels = c("Lung","Tongue", "BAL", "Negative Control"), labels = c("Lung","Tongue", "BAL", "Negative\nControls"))
+
+# #mean with individual points
+# plot_ra(gg.bal.lung.neg.tong.RAG.ordL, fill = "RA_Groups", error_bar = T)+ facet_grid(RA_Groups~.) +
+#   theme_bw() + 
+#   geom_col(color="black", aes(fill=RA_Groups)) +
+#    theme(axis.text.x = element_text(size = 20, angle = 45, hjust = 1, vjust=1), 
+#          axis.text.y = element_text(size = 22),
+#          axis.title.y = element_text(face = "bold", size = 30), 
+#          axis.title.x = element_text(), 
+#          strip.text = element_text(face = "bold", size = 25, angle = 0), 
+#          strip.background = element_blank(),
+#          panel.grid = element_blank(),
+#          legend.position = "none", 
+#          panel.spacing = unit(2, "lines"),
+#          plot.margin=unit(c(0.5,0.5,0.5,6), "cm")) + 
+#   scale_y_continuous(expand = c(0,0), limits = c(0,100), labels = dollar_format(suffix = "%", prefix = "")) + 
+#   labs(y = "Relative Abundance (%)\n", x = "\nOTU") + 
+#   scale_fill_manual(values=c("#EB3D0E", "#FB9986",  "#0300A6", "#666B6E")) + geom_point(data = gg.bal.lung.neg.tong.RAG.ordL.ind, aes(y = Percentage, 
+#             x = OTU, alpha = 1, size = 7), color="black")
+
+#mean only
+#pdf("Figure_5D.pdf", height = 16, width=22, useDingbats = FALSE)
+plot_ra(gg.bal.lung.neg.tong.RAG.ordL, fill = "RA_Groups", error_bar = T)+ facet_grid(RA_Groups~.) +
   theme_bw() + 
   geom_col(color="black", aes(fill=RA_Groups)) +
    theme(axis.text.x = element_text(size = 20, angle = 45, hjust = 1, vjust=1), 
@@ -1814,7 +1861,12 @@ plot_ra(gg.bal.lung.neg.tong.RAG.ordL, fill = "RA_Groups", error_bar = T) + face
          plot.margin=unit(c(0.5,0.5,0.5,6), "cm")) + 
   scale_y_continuous(expand = c(0,0), limits = c(0,25), labels = dollar_format(suffix = "%", prefix = "")) + 
   labs(y = "Relative Abundance (%)\n", x = "\nOTU") + 
-  scale_fill_manual(values=c("#EB3D0E", "#FB9986",  "#0300A6", "#666B6E"))
+  scale_fill_manual(values=c("#EB3D0E", "#FB9986",  "#0300A6", "#666B6E")) 
+#dev.off()
+
+# #median ordered by mean
+# ggplot(gg.bal.lung.neg.tong.RAG.ordL.ind, aes(y=Percentage, x=OTU,  fill = RA_Groups)) +
+#   geom_boxplot() + facet_grid(RA_Groups~.) + scale_y_continuous(expand = c(0,0), limits = c(0,50), labels = dollar_format(suffix = "%", prefix = ""))
 
 ```
 ## 5.2 Ordered by BAL Fluid OTUs
@@ -1861,7 +1913,7 @@ taxon_sort_gather(facet_var="RA_Groups", ord_val = "Negative Control")
 
 gg.bal.lung.neg.tong.RAG.ordN$RA_Groups <- factor(gg.bal.lung.neg.tong.RAG.ordN$RA_Groups, levels = c("Negative Control", "BAL", "Lung", "Tongue"), labels = c("Negative\nControls", "BAL", "Lung", "Tongue"))
 
-
+#pdf("Figure_S4B.pdf", width=22, height=16, useDingbats = FALSE)
 plot_ra(gg.bal.lung.neg.tong.RAG.ordN, fill = "RA_Groups", error_bar = T) + facet_grid(RA_Groups~.) +
   theme_bw() + 
   geom_col(color="black", aes(fill=RA_Groups)) +
@@ -1875,9 +1927,10 @@ plot_ra(gg.bal.lung.neg.tong.RAG.ordN, fill = "RA_Groups", error_bar = T) + face
          legend.position = "none", 
          panel.spacing = unit(2, "lines"),
          plot.margin=unit(c(0.5,0.5,0.5,6), "cm")) + 
-  scale_y_continuous(expand = c(0,0), limits = c(0,25), labels = dollar_format(suffix = "%", prefix = "")) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0,27), labels = dollar_format(suffix = "%", prefix = "")) + 
   labs(y = "Relative Abundance (%)\n", x = "\nOTU") + 
   scale_fill_manual(values=c("#666B6E",  "#0300A6", "#EB3D0E", "#FB9986"))
+#dev.off()
 
 ```
 
@@ -1890,6 +1943,7 @@ taxon_sort_gather(facet_var="RA_Groups", ord_val = "Tongue")
 
 gg.bal.lung.neg.tong.RAG.ordT$RA_Groups <- factor(gg.bal.lung.neg.tong.RAG.ordT$RA_Groups, levels = c("Tongue",  "Lung","BAL", "Negative Control"), labels = c("Tongue", "Lung","BAL", "Negative\nControls"))
 
+pdf("Figure_S4A.pdf", width=22, height=16, useDingbats = FALSE)
 plot_ra(gg.bal.lung.neg.tong.RAG.ordT, fill = "RA_Groups", error_bar = T) + facet_grid(RA_Groups~.) +
   theme_bw() + 
   geom_col(color="black", aes(fill=RA_Groups)) +
@@ -1906,6 +1960,7 @@ plot_ra(gg.bal.lung.neg.tong.RAG.ordT, fill = "RA_Groups", error_bar = T) + face
   scale_y_continuous(expand = c(0,0), limits = c(0,25), labels = dollar_format(suffix = "%", prefix = "")) + 
   labs(y = "Relative Abundance (%)\n", x = "\nOTU") + 
   scale_fill_manual(values=c("#FB9986", "#EB3D0E", "#0300A6", "#666B6E"))
+dev.off()
 
 ```
 
