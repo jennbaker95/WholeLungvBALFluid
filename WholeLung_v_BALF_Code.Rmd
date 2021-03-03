@@ -441,6 +441,25 @@ samples.to.exclude <- samples_below_150_read_threshold$Sample %>% as.vector()
 
 ```
 
+```{r plot raw read count versus ddpcr bacterial load}
+
+dplyr::filter(otu_df, Organ == "Lung") %>%
+ggplot(aes(x=log10(Total_Reads), y=log10(Gene_16S_copies_per_specimen), color = Sample_Type)) +
+geom_point()
+
+pdf(file="RevResp_Fig1.pdf", height=6, width=8, useDingbats = FALSE)
+dplyr::filter(otu_df, !is.na(Gene_16S_copies_per_specimen)) %>%
+ggplot(aes(y=log10(Total_Reads), x=log10(Gene_16S_copies_per_specimen), color = Sample_Type2)) +
+geom_point() + 
+  scale_x_continuous(limits = c(0, 5.1)) +
+  scale_y_continuous(limits = c(0, 5)) + 
+  theme_bw()
+dev.off()
+  
+
+# cor(log10(otu_df$Total_Reads), log10(otu_df$Gene_16S_copies_per_specimen),  method = "pearson", use = "complete.obs")
+```
+
 \newpage
 # III. Principal Component Analysis
 ## 3.1 Lung Samples vs. Sampling Controls
@@ -1732,7 +1751,7 @@ bray_dist_lbtce_summary$Sample_Type <- factor(bray_dist_lbtce_summary$Sample_Typ
                                      levels = c("Blank", "BAL","Lung", "Tongue", "Cecum"))
 
 #pdf("Figure_4.pdf", height = 4, width = 6, useDingbats = FALSE)
-p <- ggplot(bray_dist_lbtce_summary, aes(x=Sample_Type, y = Mean_BC)) + 
+ggplot(bray_dist_lbtce_summary, aes(x=Sample_Type, y = Mean_BC)) + 
   geom_boxplot(aes(fill=Sample_Type), show.legend = FALSE) + 
   geom_point() + 
   scale_y_continuous(limits = c(0,1.1), expand = c(0,0)) + 
