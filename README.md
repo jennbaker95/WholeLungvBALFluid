@@ -43,7 +43,7 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 
 
 #### External Links: 
-- Link to preprint: 
+- Link to preprint: https://www.biorxiv.org/content/10.1101/2020.09.08.283259v1
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 - Links to Rmarkdown htmls:
   - Trimmed & Quality-Checked Dataset (final version): 
