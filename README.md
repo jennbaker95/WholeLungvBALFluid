@@ -2,7 +2,7 @@
 
 The purpose of this repository is to provide public access to the R code and data files used in the following publication: 
 
-Baker et al. 2020. Application of an ecology-based analytic approach to discriminate signal and noise in low-biomass microbiome studies: Whole lung tissue is the preferred sampling method for amplicon-based characterization of murine lung microbiota (in preparation). 
+Baker JM, Hinkle KJ, McDonald RA, Brown CA, Falkowski NR, Huffnagle GB, Dickson RP. Whole lung tissue is the preferred sampling method for amplicon-based characterization of murine lung microbiota. Microbiome 9, 99 (2021). https://doi.org/10.1186/s40168-021-01055-4
 
 
 #### Outline of Analytical Approach for Low-Biomass Specimens
@@ -36,13 +36,14 @@ Baker et al. 2020. Application of an ecology-based analytic approach to discrimi
 - 16S rRNA gene ddPCR quantification data 
 - Read count data from MiSeq run
 - Knitted reports (raw html and pdf) for untrimmed, trimmed, and final datasets for comparison
+- PDF versions of each figure generated for the final publication, & additional figures that did not make the final publication
 - License information
 - Hidden files (.RData and .Rhistory from local sessions)
-- gitignore file (ignores cache and other hidden files when pushing directory contents to GitHub)
-- DockerFile (for generating image for reproducibility - currently under construction)
+- .gitignore file (ignores cache and other hidden files when pushing directory contents to GitHub)
 
 
 #### External Links: 
+- Link to publication: https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-021-01055-4
 - Link to preprint: https://www.biorxiv.org/content/10.1101/2020.09.08.283259v1
 - Link to SRA submission: https://www.ncbi.nlm.nih.gov/sra/PRJNA644805
 - Links to Rmarkdown htmls:
