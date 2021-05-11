@@ -1,9 +1,0 @@
-FROM rstudio
-
-LABEL Jennifer M. Baker <jennbak@umich.edu; jennbaker95@gmail.com>
-
-RUN 
-
-CMD 
-
-
